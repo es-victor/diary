@@ -1,6 +1,9 @@
 from datetime import timezone, datetime
 
-from rest_framework import serializers
+from rest_framework import serializers, status
+from rest_framework.generics import DestroyAPIView
+from rest_framework.response import Response
+
 from .models import Tag, Story
 from django.contrib.auth.models import User
 
@@ -35,13 +38,14 @@ class RegisterUserSerializer(serializers.ModelSerializer):
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ("id", "name",)
+        fields = ("id",)
 
 
 class WriteStorySerializers(serializers.ModelSerializer):
     # use CurrentUserDefault to get user details
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    tag = serializers.SlugRelatedField(slug_field="id", queryset=Tag.objects.all())
+    tags = TagSerializer(many=True, read_only=True).data
+    # tags = serializers.SlugRelatedField(slug_field="id",queryset=Tag.objects)
 
     class Meta:
         model = Story
@@ -62,3 +66,10 @@ class ReadStorySerializers(serializers.ModelSerializer):
         model = Story
         fields = ("id", "user", "tags", "title", "title_length", "created_at_month", "content", "visibility", "published", "latitude", "longitude", "created_at",)
         read_only_fields = fields
+
+
+class LogoutView(DestroyAPIView):
+    @staticmethod
+    def get(request):
+        request.user.auth_token.delete()
+        return Response(status=status.HTTP_200_OK)
