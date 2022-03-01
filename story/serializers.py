@@ -4,7 +4,7 @@ from rest_framework import serializers, status
 from rest_framework.generics import DestroyAPIView
 from rest_framework.response import Response
 
-from .models import Tag, Story
+from .models import Tag, Story, SecretQuestion, SecretQuestionAnswer
 from django.contrib.auth.models import User
 
 
@@ -38,18 +38,26 @@ class RegisterUserSerializer(serializers.ModelSerializer):
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ("id",)
+        fields = ("id", "name")
+
+
+class SecretQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SecretQuestion
+        fields = ("question",)
 
 
 class WriteStorySerializers(serializers.ModelSerializer):
     # use CurrentUserDefault to get user details
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     tags = TagSerializer(many=True, read_only=True).data
+
     # tags = serializers.SlugRelatedField(slug_field="id",queryset=Tag.objects)
 
     class Meta:
         model = Story
-        fields = ("id", "user", "tags", "title", "content", "visibility", "published", "latitude", "longitude", "created_at",)
+        fields = (
+            "id", "user", "tags", "title", "content", "visibility", "published", "latitude", "longitude", "created_at",)
 
         # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)
@@ -58,18 +66,45 @@ class WriteStorySerializers(serializers.ModelSerializer):
 
 
 class ReadStorySerializers(serializers.ModelSerializer):
-    # queryset = Transaction.objects.select_related("currency","category","user")
     user = UserSerializer(read_only=True)
     tags = TagSerializer(read_only=True, many=True)
 
     class Meta:
         model = Story
-        fields = ("id", "user", "tags", "title", "title_length", "created_at_month", "content", "visibility", "published", "latitude", "longitude", "created_at",)
+        fields = (
+            "id", "user", "tags", "title", "title_length", "content", "visibility", "published", "latitude",
+            "longitude",
+            "created_at",)
         read_only_fields = fields
 
 
-class LogoutView(DestroyAPIView):
-    @staticmethod
-    def get(request):
-        request.user.auth_token.delete()
-        return Response(status=status.HTTP_200_OK)
+class ReadSecretQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SecretQuestion
+        fields = ("question",)
+        read_only_fields = fields
+
+
+class WriteSecretQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SecretQuestion
+        fields = ("question",)
+
+
+class ReadSecretQuestionAnswerSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    question = SecretQuestionSerializer(read_only=True)
+
+    class Meta:
+        model = SecretQuestionAnswer
+        fields = ("question", "answer", "user")
+        read_only_fields = fields
+
+
+class WriteSecretQuestionAnswerSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    question = SecretQuestionSerializer(many=True, read_only=True).data
+
+    class Meta:
+        model = SecretQuestionAnswer
+        fields = ("question", "answer", "user")

@@ -11,6 +11,22 @@ class Tag(models.Model):
         return self.name
 
 
+class SecretQuestion(models.Model):
+    question = models.CharField(max_length=100, blank=False)
+
+    def __str__(self):
+        return self.question
+
+
+class SecretQuestionAnswer(models.Model):
+    answer = models.CharField(max_length=50, blank=False)
+    question = models.ForeignKey(SecretQuestion, on_delete=models.CASCADE, related_name="answer")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="answer")
+
+    def __str__(self):
+        return str(self.user) + " + " + str(self.question) + " - " + self.answer
+
+
 class Story(models.Model):
     class Meta:
         verbose_name_plural = "Stories"
@@ -31,10 +47,10 @@ class Story(models.Model):
     published = models.IntegerField(choices=STATUS, default=PUBLISHED)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True,auto_created=True)
+    created_at = models.DateTimeField(auto_now_add=True, auto_created=True)
     updated_at = models.DateTimeField(auto_now=True)
-    # calculated fields
     title_length = models.IntegerField(blank=True)
+
     # created_at_month = models.CharField(max_length=15, blank=True)
 
     def get_title_length(self):
@@ -54,6 +70,3 @@ class Story(models.Model):
 
     def __str__(self):
         return self.title
-
-
-
