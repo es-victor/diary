@@ -1,19 +1,23 @@
+from os import name
+import re
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.generics import CreateAPIView, DestroyAPIView
+from rest_framework.generics import CreateAPIView, DestroyAPIView, UpdateAPIView, ListAPIView
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet,ViewSet
 from rest_framework.permissions import IsAuthenticated
-from .serializers import TagSerializer, WriteStorySerializers, ReadStorySerializers, RegisterUserSerializer, \
+from .serializers import  ChangePasswordSecretQuestionsSerializer, ChangePasswordSerializer, TagSerializer, WriteStorySerializers, ReadStorySerializers, RegisterUserSerializer, \
     ReadSecretQuestionSerializer, WriteSecretQuestionSerializer, WriteSecretQuestionAnswerSerializer, \
     ReadSecretQuestionAnswerSerializer
 from .models import Tag, Story, SecretQuestion, SecretQuestionAnswer
+from django.contrib.auth.models import User
 
+from story import serializers
 
 class TagModelViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
+    paginator = None
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
@@ -43,7 +47,7 @@ class StoryModelViewSet(ModelViewSet):
 
 
 class MyStoryModelViewSet(ModelViewSet):
-    permission_classes = (IsAuthenticated,)
+    permissipoon_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         return Story.objects.select_related("user").filter(user=self.request.user)
@@ -74,8 +78,8 @@ class LogoutView(DestroyAPIView):
 
 
 class SecretQuestionViewSet(ModelViewSet):
-    permission_classes = (IsAuthenticated,)
-
+    # permission_classes = (IsAuthenticated,)
+    paginator = None
     def get_queryset(self):
         return SecretQuestion.objects.all()
 
@@ -87,7 +91,7 @@ class SecretQuestionViewSet(ModelViewSet):
 
 class SecretQuestionAnswerViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
-
+    paginator = None
     def get_queryset(self):
         return SecretQuestionAnswer.objects.select_related("user").filter(user=self.request.user)
 
@@ -95,3 +99,53 @@ class SecretQuestionAnswerViewSet(ModelViewSet):
         if self.action in ("list", "retrieve"):
             return ReadSecretQuestionAnswerSerializer
         return WriteSecretQuestionAnswerSerializer
+
+
+class ChangePasswordView(UpdateAPIView):
+    """
+    An endpoint for changing password.
+    """
+    serializer_class = ChangePasswordSerializer
+    model = User
+
+    # def get_object(self, queryset=None):
+    #     obj = self.request.user
+    #     return obj
+
+    def update(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            try:
+                user = User.objects.get(username=serializer.data.get("username"))
+                # set_password also hashes the password that the user will get
+                user.set_password(serializer.data.get("new_password"))
+                # delete user token
+                try:
+                    user.auth_token.delete()
+                except:
+                    pass    
+                user.save()
+                response = {
+                    # 'status': 'success',
+                    # 'code': status.HTTP_200_OK,
+                    'message': 'Password updated successfully',
+                    # 'data': []
+                }
+
+                return Response(response)
+
+            except:
+                return Response({"Username not found"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ChangePasswordSecretQuestionsView(ViewSet):
+    def list(self, request):
+        try:
+            serializer = ReadSecretQuestionSerializer(SecretQuestionAnswer.objects.filter(user__username = self.request.data["username"]), many=True)
+            return Response(serializer.data)
+        except:
+            return Response({"Bad request"}, status=status.HTTP_400_BAD_REQUEST)
+
+# class ChangePasswordSecretQuestionsAnswerView():
+    

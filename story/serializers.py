@@ -11,8 +11,26 @@ from django.contrib.auth.models import User
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("username", "email", "first_name", "last_name")
+        fields = ("id", "username", "email", "first_name", "last_name")
         read_only_fields = fields
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    # model = User
+
+    """
+    Serializer for password change endpoint.
+    """
+    username = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+
+class ChangePasswordSecretQuestionsSerializer(serializers.Serializer):
+    
+    """
+    Serializer for user secret questions password change endpoint.
+    """
+    username = serializers.CharField(required=True)
 
 
 class RegisterUserSerializer(serializers.ModelSerializer):
@@ -44,7 +62,7 @@ class TagSerializer(serializers.ModelSerializer):
 class SecretQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = SecretQuestion
-        fields = ("question",)
+        fields = ("id", "question")
 
 
 class WriteStorySerializers(serializers.ModelSerializer):
@@ -81,14 +99,14 @@ class ReadStorySerializers(serializers.ModelSerializer):
 class ReadSecretQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = SecretQuestion
-        fields = ("question",)
+        fields = ("id", "question",)
         read_only_fields = fields
 
 
 class WriteSecretQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = SecretQuestion
-        fields = ("question",)
+        fields = ("id", "question",)
 
 
 class ReadSecretQuestionAnswerSerializer(serializers.ModelSerializer):
@@ -102,9 +120,11 @@ class ReadSecretQuestionAnswerSerializer(serializers.ModelSerializer):
 
 
 class WriteSecretQuestionAnswerSerializer(serializers.ModelSerializer):
+    
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    question = SecretQuestionSerializer(many=True, read_only=True).data
+    question = SecretQuestionSerializer(many=False, read_only=True).data
 
     class Meta:
         model = SecretQuestionAnswer
         fields = ("question", "answer", "user")
+

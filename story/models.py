@@ -20,7 +20,7 @@ class SecretQuestion(models.Model):
 
 class SecretQuestionAnswer(models.Model):
     answer = models.CharField(max_length=50, blank=False)
-    question = models.ForeignKey(SecretQuestion, on_delete=models.CASCADE, related_name="answer")
+    question = models. OneToOneField(SecretQuestion, on_delete=models.CASCADE, related_name="answer") 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="answer")
 
     def __str__(self):
