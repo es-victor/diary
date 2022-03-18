@@ -25,13 +25,6 @@ class ChangePasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True)
 
 
-class ChangePasswordSecretQuestionsSerializer(serializers.Serializer):
-    
-    """
-    Serializer for user secret questions password change endpoint.
-    """
-    username = serializers.CharField(required=True)
-
 
 class RegisterUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -109,13 +102,20 @@ class WriteSecretQuestionSerializer(serializers.ModelSerializer):
         fields = ("id", "question",)
 
 
+class ChangePasswordSecretQuestionsAnswers(serializers.ModelSerializer):
+    class Meta:
+        model = SecretQuestion
+        fields = ("id", "question",)
+
+
 class ReadSecretQuestionAnswerSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    # user = UserSerializer(read_only=True)
     question = SecretQuestionSerializer(read_only=True)
 
     class Meta:
         model = SecretQuestionAnswer
-        fields = ("question", "answer", "user")
+        # fields = ("question", "answer", "user")
+        fields = ("id", "question", "answer")
         read_only_fields = fields
 
 

@@ -7,7 +7,7 @@ from rest_framework.generics import CreateAPIView, DestroyAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet,ViewSet
 from rest_framework.permissions import IsAuthenticated
-from .serializers import  ChangePasswordSecretQuestionsSerializer, ChangePasswordSerializer, TagSerializer, WriteStorySerializers, ReadStorySerializers, RegisterUserSerializer, \
+from .serializers import   ChangePasswordSerializer, TagSerializer, WriteStorySerializers, ReadStorySerializers, RegisterUserSerializer, \
     ReadSecretQuestionSerializer, WriteSecretQuestionSerializer, WriteSecretQuestionAnswerSerializer, \
     ReadSecretQuestionAnswerSerializer
 from .models import Tag, Story, SecretQuestion, SecretQuestionAnswer
@@ -142,10 +142,35 @@ class ChangePasswordView(UpdateAPIView):
 class ChangePasswordSecretQuestionsView(ViewSet):
     def list(self, request):
         try:
-            serializer = ReadSecretQuestionSerializer(SecretQuestionAnswer.objects.filter(user__username = self.request.data["username"]), many=True)
-            return Response(serializer.data)
+            data = []
+            # serializer = ReadSecretQuestionSerializer(SecretQuestionAnswer.objects.filter(user__username = self.request.data["username"]), many=True)
+            results  = SecretQuestionAnswer.objects.filter(user__username = self.request.data["username"]).values()   
+            for answer in results:
+                data.append( SecretQuestion.objects.filter(id = answer["question_id"]).values().first() )
+            return Response(data)
         except:
             return Response({"Bad request"}, status=status.HTTP_400_BAD_REQUEST)
 
-# class ChangePasswordSecretQuestionsAnswerView():
-    
+class ChangePasswordSecretQuestionsAnswersView(ViewSet):
+    def list(self, request):
+        try:    
+            # print(self.request.data)
+            data = []
+            # print(SecretQuestionAnswer.objects.filter(user__username = self.request.data["username"]))
+            # serializer = ReadSecretQuestionAnswerSerializer(SecretQuestionAnswer.objects.filter(user__username = self.request.data["username"]), many=True) 
+            # print(SecretQuestionAnswer.objects.filter(user__username = self.request.data["username"]).values_list("answer"))
+            answerLists = SecretQuestionAnswer.objects.filter(user__username = self.request.data["username"]).values_list("answer").values()   
+            
+            for questionAnswer in self.request.data["question_answer"]:
+                # data.append(questionAnswer["question_id"])
+                for answer in answerLists:
+                    # Check for same question index
+                    if questionAnswer["question_id"] == answer["question_id"]:
+                        # data.append({answer["question_id"]:questionAnswer["question_id"]})
+                        if answer["answer"].strip() .lower() ==  questionAnswer["answer"].strip().lower():
+                            data.append({questionAnswer["question_id"]:True})        
+                        else:
+                            data.append({questionAnswer["question_id"]:False})     
+            return Response(data, status=status.HTTP_200_OK)
+        except:
+            return Response({"Bad request"}, status=status.HTTP_400_BAD_REQUEST)
